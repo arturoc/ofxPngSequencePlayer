@@ -15,10 +15,12 @@
 #include "ofPixels.h"
 #include "ofBaseTypes.h"
 #include "ofSoundPlayer.h"
+#include "ofImage.h"
 
-class ofxPngSequencePlayer: public ofThread, public ofBaseVideoPlayer {
+class ofxPngSequencePlayer: public ofThread {
 public:
-	ofxPngSequencePlayer();
+	
+    ofxPngSequencePlayer();
 	virtual ~ofxPngSequencePlayer();
 
 	void setFps(int fps);
@@ -27,7 +29,7 @@ public:
 	void close();
 	void play();
 	void stop();
-
+    void draw(int x, int y, float width, float height);
 	void update();
 
 	bool 				isFrameNew();
@@ -55,7 +57,7 @@ public:
 
 	int					getCurrentFrame();
 	int					getTotalNumFrames();
-	int					getLoopState();
+	ofLoopType			getLoopState();
 
 	void				firstFrame();
 	void				nextFrame();
@@ -68,7 +70,9 @@ protected:
 	int currentFrame;
 	int fps, oneFrameTime;
 	bool bPlaying;
-
+    ofLoopType loopState;
+    
+    ofTexture *drawTexture;
 	queue<ofPixels> frames;
 	ofPixels pixels;
 

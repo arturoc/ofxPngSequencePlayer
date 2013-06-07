@@ -18,6 +18,7 @@ ofxPngSequencePlayer::ofxPngSequencePlayer() {
 	isNewPixels = 0;
 	lastFrameTime = 0;
 	speed = 1;
+    drawTexture = NULL;
 }
 
 ofxPngSequencePlayer::~ofxPngSequencePlayer() {
@@ -30,9 +31,9 @@ void ofxPngSequencePlayer::setFps(int _fps){
 }
 
 void ofxPngSequencePlayer::setAudioTrack(string audio){
-	ofPtr<ofBaseSoundPlayer> fmodSoundPlayer = ofPtr<ofBaseSoundPlayer>(new ofFmodSoundPlayer);
-	soundPlayer.setPlayer(fmodSoundPlayer);
-	soundPlayer.loadSound(audio,true);
+	//ofPtr<ofBaseSoundPlayer> fmodSoundPlayer = ofPtr<ofBaseSoundPlayer>(new ofFmodSoundPlayer);
+	//soundPlayer.setPlayer(fmodSoundPlayer);
+	//soundPlayer.loadSound(audio,true);
 }
 
 bool ofxPngSequencePlayer::loadMovie(string _folder){
@@ -54,26 +55,43 @@ bool ofxPngSequencePlayer::loadMovie(string _folder){
 	ofLoadImage(frames.back(),folder.getPath(currentFrame));
 	pixels = frames.back();
 
+    
+    if(drawTexture == NULL) drawTexture = new ofTexture();
+    if (drawTexture->bAllocated()) drawTexture->clear();
+    drawTexture->allocate(70, 70, GL_RGBA);
+    drawTexture->loadData(getPixels(),70, 70, GL_RGBA);
 	return true;
 }
 
 void ofxPngSequencePlayer::close(){
 	stop();
 	folder.close();
-	soundPlayer.unloadSound();
+    drawTexture->clear();
+	//soundPlayer.unloadSound();
 }
 
-void ofxPngSequencePlayer::play(){
+
+void ofxPngSequencePlayer::draw(int x, int y, float width, float height)
+{
+    // TODO: Optimizar el dibujo del hotspot.
+    drawTexture->loadData(getPixels(),70, 70, GL_RGBA);
+    //img.setFromPixels(getPixels(), 70, 70, OF_IMAGE_COLOR_ALPHA);
+    drawTexture->draw(x,y,width,height);
+}
+
+
+void ofxPngSequencePlayer::play()
+{
 	currentFrame = 0;
 	lastFrameTime = ofGetElapsedTimeMillis();
 	startThread(true,false);
-	soundPlayer.play();
+	//soundPlayer.play();
 	bPlaying = true;
 }
 
 void ofxPngSequencePlayer::stop(){
 	currentFrame = 0;
-	soundPlayer.stop();
+	//soundPlayer.stop();
 	waitForThread(true);
 	pixels.set(0);
 	while(!frames.empty()) frames.pop();
@@ -96,7 +114,7 @@ bool ofxPngSequencePlayer::isFrameNew(){
 
 void ofxPngSequencePlayer::threadedFunction(){
 	while(isThreadRunning()){
-		if(frames.size()<10 && currentFrame+frames.size()+1<folder.size() ){
+        if(frames.size()<10 && currentFrame+frames.size()+1<getTotalNumFrames()){
 			frames.push(ofPixels());
 			ofLoadImage(frames.back(),folder.getPath(currentFrame+frames.size()));
 		}
@@ -105,20 +123,30 @@ void ofxPngSequencePlayer::threadedFunction(){
 		int currentTime = ofGetElapsedTimeMillis();
 		int diff = currentTime - lastFrameTime;
 		if(diff>=oneFrameTime){
+            
 			lastFrameTime = currentTime - (diff-oneFrameTime*(diff/oneFrameTime));
+            
 			for(int i=0;i<(diff/oneFrameTime-1) && !frames.empty();i++){
-				if(frames.size()==1){
+            
+                if(frames.size()==1){
 					pixels = frames.front();
 				}
 				frames.pop();
-				currentFrame = ofClamp(++currentFrame,0,folder.size()-1);
+				//currentFrame = ofClamp(++currentFrame,0,(folder.size()-1)/2);
+                currentFrame += 1;
+                if(currentFrame+1 >= getTotalNumFrames()) currentFrame = 0;
 			}
+            
 			if(!frames.empty()){
 				pixels = frames.front();
 				frames.pop();
 			}
-			currentFrame = ofClamp(++currentFrame,0,folder.size()-1);
-			isNewPixels = true;
+        
+            //currentFrame = ofClamp(++currentFrame,0,(folder.size()-1)/2);
+			currentFrame += 1;
+            if(currentFrame+1 >= getTotalNumFrames()) currentFrame = 0;
+            isNewPixels = true;
+             
 		}
 	}
 }
@@ -170,11 +198,11 @@ bool ofxPngSequencePlayer::getIsMovieDone(){
 void ofxPngSequencePlayer::setPaused(bool bPause){
 	if(bPause){
 		stopThread();
-		soundPlayer.setPaused(true);
+		//soundPlayer.setPaused(true);
 	}else if(!isPlaying()){
 		lastFrameTime = ofGetElapsedTimeMillis();
 		startThread(true,false);
-		soundPlayer.setPaused(false);
+		//soundPlayer.setPaused(false);
 	}
 }
 
@@ -188,7 +216,7 @@ void ofxPngSequencePlayer::setPosition(float pct){
 }
 
 void ofxPngSequencePlayer::setLoopState(ofLoopType state){
-
+    loopState = state;
 }
 
 void ofxPngSequencePlayer::setSpeed(float _speed){
@@ -210,8 +238,8 @@ int	ofxPngSequencePlayer::getTotalNumFrames(){
 	return folder.size();
 }
 
-int	ofxPngSequencePlayer::getLoopState(){
-
+ofLoopType ofxPngSequencePlayer::getLoopState(){
+    return loopState;
 }
 
 void ofxPngSequencePlayer::firstFrame(){
