@@ -18,6 +18,7 @@ ofxPngSequencePlayer::ofxPngSequencePlayer() {
 	isNewPixels = 0;
 	lastFrameTime = 0;
 	speed = 1;
+    drawTexture = NULL;
 }
 
 ofxPngSequencePlayer::~ofxPngSequencePlayer() {
@@ -54,15 +55,18 @@ bool ofxPngSequencePlayer::loadMovie(string _folder){
 	ofLoadImage(frames.back(),folder.getPath(currentFrame));
 	pixels = frames.back();
 
-    drawTexture = new ofTexture();
-    drawTexture->allocate(70, 70, GL_RGBA);
     
+    if(drawTexture == NULL) drawTexture = new ofTexture();
+    if (drawTexture->bAllocated()) drawTexture->clear();
+    drawTexture->allocate(70, 70, GL_RGBA);
+    drawTexture->loadData(getPixels(),70, 70, GL_RGBA);
 	return true;
 }
 
 void ofxPngSequencePlayer::close(){
 	stop();
 	folder.close();
+    drawTexture->clear();
 	//soundPlayer.unloadSound();
 }
 
