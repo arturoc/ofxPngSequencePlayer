@@ -110,9 +110,6 @@ bool ofxPngSequencePlayer::isFrameNew(){
 
 void ofxPngSequencePlayer::threadedFunction(){
 	while(isThreadRunning()){
-   
-        cout << frames.size() << endl;
-        
         if(frames.size()<10 && currentFrame+frames.size()+1<getTotalNumFrames()){
 			frames.push(ofPixels());
 			ofLoadImage(frames.back(),folder.getPath(currentFrame+frames.size()));
